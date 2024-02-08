@@ -10,4 +10,5 @@ find_package(spdlog REQUIRED)
 
 add_executable(molsim molsim.cpp)
 target_link_libraries(molsim PUBLIC Boost::timer Boost::system Boost::program_options spdlog::spdlog 
-RDKit::FileParsers)
+RDKit::FileParsers RDKit::SmilesParse RDKit::GraphMol RDKit::Fingerprints RDKit::SubstructMatch 
+RDKit::Descriptors RDKit::DataStructs)
