@@ -6,9 +6,18 @@
 #include <exception>
 #include <filesystem>
 
+#include <GraphMol/RDKitBase.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/MolOps.h>
 #include <GraphMol/RWMol.h>
+#include <GraphMol/Fingerprints/MorganFingerprints.h>
+#include <GraphMol/Fingerprints/Fingerprints.h>
+#include <GraphMol/Fingerprints/AtomPairGenerator.h>
+#include <GraphMol/Fingerprints/MorganGenerator.h>
+#include <DataStructs/BitOps.h>
+#include <DataStructs/SparseBitVect.h>
+#include <DataStructs/BitVectUtils.h>
+
 #include <spdlog/spdlog.h>
 
 // Function to calculate the Tanimoto similarity between two molecules
@@ -53,9 +62,9 @@ int main(int argc, char *argv[]) {
     }
 
     // print out the options
-    std::cout << "Input file: " << inputPath << std::endl;
-    std::cout << "Database file: " << databasePath << std::endl;
-    std::cout << "Output file: " << outputPath << std::endl;
+    spdlog::info("Input file: {}", inputPath);
+    spdlog::info("Database file: {}", databasePath);
+    spdlog::info("Output file: {}", outputPath);
 
     const auto inputFileExtension = std::filesystem::path(inputPath).extension().string();
     const auto databaseFileExtension = std::filesystem::path(databasePath).extension().string();
@@ -72,12 +81,49 @@ int main(int argc, char *argv[]) {
             }
         }
     } else {
-        std::cerr << "Input file format not supported" << std::endl;
+        spdlog::error("Input file format not supported");
+        return 1;
+    }
+
+    if (databaseFileExtension == ".sdf") {
+        RDKit::SDMolSupplier databaseSupplier(databasePath, true, false, false);
+        while (!databaseSupplier.atEnd()) {
+            auto mol = boost::make_shared<RDKit::RWMol>(*databaseSupplier.next());
+            if (mol) {
+                databaseMols.emplace_back(mol);
+            }
+        }
+    } else {
+        spdlog::error("Database file format not supported");
         return 1;
     }
 
     // print out the number of molecules in the input file
-    std::cout << "Number of molecules in the input file: " << inputMols.size() << std::endl;
+    spdlog::info("Number of molecules in the input file: {}", inputMols.size());
+    spdlog::info("Number of molecules in the database file: {}", databaseMols.size());
 
+    std::unique_ptr<RDKit::FingerprintGenerator<std::uint32_t>> fpgen{RDKit::MorganFingerprint::getMorganGenerator<std::uint32_t>(2)};
+
+    std::vector<ExplicitBitVect*> inputFingerprints;
+    std::vector<ExplicitBitVect*> databaseFingerprints;
+
+    for (const auto mol : inputMols) {
+        inputFingerprints.emplace_back(fpgen->getFingerprint(*mol));
+    }
+
+    for (const auto mol : databaseMols) {
+        databaseFingerprints.emplace_back(fpgen->getFingerprint(*mol));
+    }
+
+    spdlog::info("Finished generating input fingerprints. Vector size: {}", inputFingerprints.size());
+
+    std::vector<std::vector<double>> similarityMatrix(inputMols.size(), std::vector<double>(databaseMols.size(), 0.0));
+
+    // for (std::size_t i = 0; i < inputFingerprints.size(); ++i) {
+    //     RDKit::FromDaylightString(inputFingerprints[i]->toString());
+    //     for (std::size_t j = 0; j < databaseFingerprints.size(); ++j) {
+    //         similarityMatrix[i][j] = TanimotoSimilarity(*inputFingerprints[i], *databaseFingerprints[j]);
+    //     }
+    // }
     return 0;
 }
