@@ -9,7 +9,7 @@ The output is written to a CSV file with the following columns: `input_molecule,
 ```
 conda create -p .conda
 conda activate .conda/
-conda install -c conda-forge cmake rdkit eigen boost spdlog
+conda install -c conda-forge cmake rdkit eigen boost spdlog gxx
 
 mkdir build
 cd build
