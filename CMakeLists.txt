@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(simple_cxx_example)
+project(molsim)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
