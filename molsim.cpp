@@ -5,6 +5,7 @@
 #include <boost/program_options.hpp>
 #include <exception>
 #include <filesystem>
+#include <omp.h>
 
 #include <GraphMol/RDKitBase.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
@@ -153,6 +154,7 @@ int main(int argc, char *argv[])
 
     std::vector<std::vector<double>> similarityMatrix(inputMols.size(), std::vector<double>(databaseMols.size(), 0.0));
 
+    #pragma omp parallel for
     for (std::size_t i = 0; i < inputFingerprints.size(); ++i)
     {
         for (std::size_t j = 0; j < databaseFingerprints.size(); ++j)
